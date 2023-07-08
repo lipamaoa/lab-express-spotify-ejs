@@ -18,13 +18,11 @@ const spotifyApi = new SpotifyWebApi({
   clientSecret: process.env.CLIENT_SECRET,
 });
 
-async function getAccessToken() {
-  const data = await spotifyApi.clientCredentialsGrant();
-  const accessToken = data.body["access_token"];
-  spotifyApi.setAccessToken(accessToken);
-}
-
-getAccessToken();
+// Retrieve an access token
+spotifyApi
+  .clientCredentialsGrant()
+  .then(data => spotifyApi.setAccessToken(data.body['access_token']))
+  .catch(error => console.log('Something went wrong when retrieving an access token', error))
 
 app.get("/", (req, res) => {
   res.render("index");
@@ -41,9 +39,33 @@ app.get("/artist-search", async (req, res) => {
     console.error(
       "An error as occured while searching artists: " + err.message
     );
-    res.render("error");
   }
 });
+
+app.get("/albums/:artistId", async(req,res) =>{
+  try{
+    const artistId = req.params.artistId;
+    const data= await spotifyApi.getArtistAlbums(artistId);
+    const albums = data.body.items;
+    res.render('albums', {albums});
+
+  }catch(err){
+    console.error("An error as occured while trying to load an album")
+  }
+})
+
+app.get("/tracks/:albumId" , async(req, res) =>{
+  try{
+
+    const albumId = req.params.albumId;
+    const data= await spotifyApi.getAlbumTracks(albumId);
+    const tracks = data.body.items;
+    res.render('tracks', {tracks});
+
+  }catch(err){
+    console.error("An error as occured while trying to load a track.")
+  }
+})
 
 app.listen(3000, () =>
   console.log("My Spotify project running on port 3000 🎧 🥁 🎸 🔊")
